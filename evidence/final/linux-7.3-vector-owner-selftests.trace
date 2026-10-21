@@ -1,0 +1,41 @@
+Random seed: 0x744c136d
+Vector owner lifetime test passed
+Random seed: 0x61fe776c
+Vector ONE_REG owner test passed (vlenb=32)
+# tracer: nop
+#
+# entries-in-buffer/entries-written: 25/25   #P:8
+#
+#                                _-----=> irqs-off/BH-disabled
+#                               / _----=> need-resched
+#                              | / _---=> hardirq/softirq
+#                              || / _--=> preempt-depth
+#                              ||| / _-=> migrate-disable
+#                              |||| /     delay
+#           TASK-PID     CPU#  |||||  TIMESTAMP  FUNCTION
+#              | |         |   |||||     |         |
+ vector_owner_li-359     [000] b..1.    99.585606: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: load, eligible: 0, reason: migration, host VS: 0x0, guest VS: 0x200, generation: 1
+ vector_owner_li-359     [000] b..1.    99.586724: kvm_riscv_vector_restore_request: VCPU: 0, CPU: 0, source: load, host VS: 0x0
+ vector_owner_li-359     [000] ...1.    99.587719: kvm_riscv_vector_restore: VCPU: 0, CPU: 0, mode: full
+ vector_owner_li-359     [000] d..2.    99.612031: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: put, eligible: 1, reason: put_candidate, host VS: 0x0, guest VS: 0x400, generation: 2
+ vector_owner_li-359     [000] b..1.    99.612548: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: load, eligible: 1, reason: hit, host VS: 0x0, guest VS: 0x400, generation: 2
+ vector_owner_li-359     [000] b..1.    99.612592: kvm_riscv_vector_restore_request: VCPU: 0, CPU: 0, source: load, host VS: 0x0
+ vector_owner_li-359     [000] ...1.    99.613193: kvm_riscv_vector_restore: VCPU: 0, CPU: 0, mode: csr
+ vector_owner_li-359     [000] b..1.    99.614000: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: put, eligible: 1, reason: put_candidate, host VS: 0x0, guest VS: 0x400, generation: 2
+ vector_owner_li-359     [000] b..1.    99.819799: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: load, eligible: 0, reason: other_vcpu, host VS: 0x0, guest VS: 0x200, generation: 1
+ vector_owner_li-359     [000] b..1.    99.827902: kvm_riscv_vector_restore_request: VCPU: 0, CPU: 0, source: load, host VS: 0x0
+ vector_owner_li-359     [000] ...1.    99.836282: kvm_riscv_vector_restore: VCPU: 0, CPU: 0, mode: full
+ vector_owner_li-359     [000] b..1.    99.880337: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: put, eligible: 1, reason: put_candidate, host VS: 0x0, guest VS: 0x400, generation: 2
+ vector_owner_on-361     [000] b..2.   100.177243: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: invalidate, eligible: 0, reason: kernel_vector, host VS: 0x0, guest VS: 0x400, generation: 2
+ vector_owner_on-361     [000] b..1.   100.200555: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: load, eligible: 0, reason: migration, host VS: 0x0, guest VS: 0x200, generation: 1
+ vector_owner_on-361     [000] b..1.   100.201204: kvm_riscv_vector_restore_request: VCPU: 0, CPU: 0, source: load, host VS: 0x0
+ vector_owner_on-361     [000] ...1.   100.201312: kvm_riscv_vector_restore: VCPU: 0, CPU: 0, mode: full
+ vector_owner_on-361     [000] b..1.   100.204625: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: put, eligible: 1, reason: put_candidate, host VS: 0x0, guest VS: 0x400, generation: 2
+ vector_owner_on-361     [000] b..1.   100.205671: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: load, eligible: 1, reason: hit, host VS: 0x0, guest VS: 0x400, generation: 2
+ vector_owner_on-361     [000] b..1.   100.205730: kvm_riscv_vector_restore_request: VCPU: 0, CPU: 0, source: load, host VS: 0x0
+ vector_owner_on-361     [000] ...1.   100.206114: kvm_riscv_vector_restore: VCPU: 0, CPU: 0, mode: csr
+ vector_owner_on-361     [000] b..1.   100.206497: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: put, eligible: 1, reason: put_candidate, host VS: 0x0, guest VS: 0x400, generation: 3
+ vector_owner_on-361     [000] b..1.   100.206740: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: load, eligible: 0, reason: generation, host VS: 0x0, guest VS: 0x400, generation: 4
+ vector_owner_on-361     [000] b..1.   100.206831: kvm_riscv_vector_restore_request: VCPU: 0, CPU: 0, source: load, host VS: 0x0
+ vector_owner_on-361     [000] ...1.   100.207029: kvm_riscv_vector_restore: VCPU: 0, CPU: 0, mode: full
+ vector_owner_on-361     [000] b..1.   100.207084: kvm_riscv_vector_shadow: VCPU: 0, CPU: 0, action: put, eligible: 1, reason: put_candidate, host VS: 0x0, guest VS: 0x400, generation: 5

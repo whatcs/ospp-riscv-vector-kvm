@@ -1,0 +1,43 @@
+diff --git a/arch/riscv/kvm/trace.h b/arch/riscv/kvm/trace.h
+index 4789dc15e65b..6b1389af0d7c 100644
+--- a/arch/riscv/kvm/trace.h
++++ b/arch/riscv/kvm/trace.h
+@@ -155,7 +155,7 @@ TRACE_EVENT(kvm_riscv_vector_restore_request,
+ 	TP_printk("VCPU: %lu, CPU: %d, source: %s, host VS: 0x%lx",
+ 		  __entry->vcpu_id, __entry->cpu,
+ 		  __print_symbolic(__entry->source,
+-			{ 0, "load" }, { 1, "kernel_vector" }),
++				   { 0, "load" }, { 1, "kernel_vector" }),
+ 		  __entry->host_vs)
+ );
+ 
+diff --git a/arch/riscv/kvm/vcpu_vector.c b/arch/riscv/kvm/vcpu_vector.c
+index 1201a8018167..56c0f7078a9f 100644
+--- a/arch/riscv/kvm/vcpu_vector.c
++++ b/arch/riscv/kvm/vcpu_vector.c
+@@ -65,7 +65,8 @@ void kvm_riscv_vcpu_guest_vector_restore(struct kvm_cpu_context *cntx,
+ 
+ 			riscv_v_flags_set(riscv_v_flags() | RISCV_V_VCPU_NEED_RESTORE);
+ 			trace_kvm_riscv_vector_restore_request(vcpu->vcpu_id,
+-				smp_processor_id(), 0, task_pt_regs(current)->status & SR_VS);
++						       smp_processor_id(), 0,
++						       task_pt_regs(current)->status & SR_VS);
+ 		}
+ 	}
+ }
+@@ -118,10 +119,12 @@ void kvm_riscv_vcpu_flush_vector(void)
+ 
+ 	kvm_riscv_vcpu_guest_vector_save(&vcpu->arch.guest_context, vcpu->arch.isa);
+ 
+-	if ((vcpu->arch.guest_context.sstatus & SR_VS) != SR_VS_OFF)
++	if ((vcpu->arch.guest_context.sstatus & SR_VS) != SR_VS_OFF) {
+ 		riscv_v_flags_set(riscv_v_flags() | RISCV_V_VCPU_NEED_RESTORE);
+-	trace_kvm_riscv_vector_restore_request(vcpu->vcpu_id,
+-		smp_processor_id(), 1, task_pt_regs(current)->status & SR_VS);
++		trace_kvm_riscv_vector_restore_request(vcpu->vcpu_id,
++						       smp_processor_id(), 1,
++						       task_pt_regs(current)->status & SR_VS);
++	}
+ }
+ 
+ #endif

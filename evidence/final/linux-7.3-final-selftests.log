@@ -1,0 +1,239 @@
+OSPP 26a190041 Linux 7.3 final selftest evidence
+2026-10-20T12:22:23+00:00
+Linux ospp-riscv 7.3.0-gc03c1a14507d-dirty #1 SMP PREEMPT Mon Oct 19 18:40:15 UTC 2026 riscv64 riscv64 riscv64 GNU/Linux
+vector_owner_fastpath=Y
+=== KVM owner tests ===
+Random seed: 0x12980a87
+Vector owner lifetime test passed
+Random seed: 0x1208efa
+Vector ONE_REG owner test passed (vlenb=32)
+=== KVM get-reg-list ===
+Random seed: 0x1208efa
+sbi-base: PASS
+sbi-sta: PASS
+1..0 # SKIP - sbi-pmu not available, skipping tests
+sbi-dbcn: PASS
+sbi-susp: PASS
+sbi-mpxy: PASS
+1..0 # SKIP - sbi-fwft_misaligned_deleg not available, skipping tests
+1..0 # SKIP - smnpm not available, skipping tests
+1..0 # SKIP - svade not available, skipping tests
+1..0 # SKIP - zicfilp not available, skipping tests
+1..0 # SKIP - zicfiss not available, skipping tests
+1..0 # SKIP - aia not available, skipping tests
+fp_f: PASS
+fp_d: PASS
+1..0 # SKIP - h not available, skipping tests
+v: PASS
+1..0 # SKIP - smnpm not available, skipping tests
+1..0 # SKIP - smstateen not available, skipping tests
+1..0 # SKIP - sscofpmf not available, skipping tests
+1..0 # SKIP - ssnpm not available, skipping tests
+sstc: PASS
+1..0 # SKIP - svade not available, skipping tests
+svadu: PASS
+1..0 # SKIP - svinval not available, skipping tests
+1..0 # SKIP - svnapot not available, skipping tests
+1..0 # SKIP - svpbmt not available, skipping tests
+1..0 # SKIP - svvptc not available, skipping tests
+zaamo: PASS
+1..0 # SKIP - zabha not available, skipping tests
+1..0 # SKIP - zacas not available, skipping tests
+zalrsc: PASS
+1..0 # SKIP - zalasr not available, skipping tests
+zawrs: PASS
+zba: PASS
+zbb: PASS
+zbc: PASS
+1..0 # SKIP - zbkb not available, skipping tests
+1..0 # SKIP - zbkc not available, skipping tests
+1..0 # SKIP - zbkx not available, skipping tests
+zbs: PASS
+zca: PASS
+1..0 # SKIP - zcb not available, skipping tests
+zcd: PASS
+1..0 # SKIP - zcf not available, skipping tests
+1..0 # SKIP - zclsd not available, skipping tests
+1..0 # SKIP - zcmop not available, skipping tests
+zfa: PASS
+1..0 # SKIP - zfbfmin not available, skipping tests
+1..0 # SKIP - zfh not available, skipping tests
+1..0 # SKIP - zfhmin not available, skipping tests
+zicbom: PASS
+1..0 # SKIP - zicbop not available, skipping tests
+zicboz: PASS
+1..0 # SKIP - ziccrse not available, skipping tests
+1..0 # SKIP - zicfilp not available, skipping tests
+1..0 # SKIP - zicfiss not available, skipping tests
+zicntr: PASS
+1..0 # SKIP - zicond not available, skipping tests
+zicsr: PASS
+zifencei: PASS
+zihintntl: PASS
+zihintpause: PASS
+zihpm: PASS
+1..0 # SKIP - zilsd not available, skipping tests
+1..0 # SKIP - zimop not available, skipping tests
+1..0 # SKIP - zknd not available, skipping tests
+1..0 # SKIP - zkne not available, skipping tests
+1..0 # SKIP - zknh not available, skipping tests
+1..0 # SKIP - zkr not available, skipping tests
+1..0 # SKIP - zksed not available, skipping tests
+1..0 # SKIP - zksh not available, skipping tests
+1..0 # SKIP - zkt not available, skipping tests
+1..0 # SKIP - ztso not available, skipping tests
+1..0 # SKIP - zvbb not available, skipping tests
+1..0 # SKIP - zvbc not available, skipping tests
+1..0 # SKIP - zvfbfmin not available, skipping tests
+1..0 # SKIP - zvfbfwma not available, skipping tests
+1..0 # SKIP - zvfh not available, skipping tests
+1..0 # SKIP - zvfhmin not available, skipping tests
+1..0 # SKIP - zvkb not available, skipping tests
+1..0 # SKIP - zvkg not available, skipping tests
+1..0 # SKIP - zvkned not available, skipping tests
+1..0 # SKIP - zvknha not available, skipping tests
+1..0 # SKIP - zvknhb not available, skipping tests
+1..0 # SKIP - zvksed not available, skipping tests
+1..0 # SKIP - zvksh not available, skipping tests
+1..0 # SKIP - zvkt not available, skipping tests
+=== RISC-V Vector kselftests ===
+--- v_initval ---
+TAP version 13
+1..1
+# Starting 1 tests from 1 test cases.
+#  RUN           global.v_initval ...
+#            OK  global.v_initval
+ok 1 global.v_initval
+# PASSED: 1 / 1 tests passed.
+# Totals: pass:1 fail:0 xfail:0 xpass:0 skip:0 error:0
+--- vstate_prctl ---
+TAP version 13
+1..13
+# Starting 13 tests from 1 test cases.
+#  RUN           global.get_control_no_v ...
+#      SKIP      Test expects vector to be not supported
+#            OK  global.get_control_no_v
+ok 1 global.get_control_no_v # SKIP Test expects vector to be not supported
+#  RUN           global.set_control_no_v ...
+#      SKIP      Test expects vector to be not supported
+#            OK  global.set_control_no_v
+ok 2 global.set_control_no_v # SKIP Test expects vector to be not supported
+#  RUN           global.vstate_on_current ...
+#            OK  global.vstate_on_current
+ok 3 global.vstate_on_current
+#  RUN           global.vstate_off_eperm ...
+#            OK  global.vstate_off_eperm
+ok 4 global.vstate_off_eperm
+#  RUN           global.vstate_on_no_nesting ...
+#            OK  global.vstate_on_no_nesting
+ok 5 global.vstate_on_no_nesting
+#  RUN           global.vstate_off_nesting ...
+#            OK  global.vstate_off_nesting
+ok 6 global.vstate_off_nesting
+#  RUN           global.vstate_on_inherit_no_nesting ...
+#            OK  global.vstate_on_inherit_no_nesting
+ok 7 global.vstate_on_inherit_no_nesting
+#  RUN           global.vstate_on_inherit ...
+#            OK  global.vstate_on_inherit
+ok 8 global.vstate_on_inherit
+#  RUN           global.vstate_off_inherit_no_nesting ...
+#            OK  global.vstate_off_inherit_no_nesting
+ok 9 global.vstate_off_inherit_no_nesting
+#  RUN           global.vstate_off_inherit ...
+#            OK  global.vstate_off_inherit
+ok 10 global.vstate_off_inherit
+#  RUN           global.inval_set_control_1 ...
+#            OK  global.inval_set_control_1
+ok 11 global.inval_set_control_1
+#  RUN           global.inval_set_control_2 ...
+#            OK  global.inval_set_control_2
+ok 12 global.inval_set_control_2
+#  RUN           global.inval_set_control_3 ...
+#            OK  global.inval_set_control_3
+ok 13 global.inval_set_control_3
+# PASSED: 13 / 13 tests passed.
+# 2 skipped test(s) detected. Consider enabling relevant config options to improve coverage.
+# Totals: pass:11 fail:0 xfail:0 xpass:0 skip:2 error:0
+--- vstate_ptrace ---
+1..2
+1..2
+# vlenb 32
+ok 1 GETREGSET vector
+ok 2 SETREGSET vector
+# Totals: pass:2 fail:0 xfail:0 xpass:0 skip:0 error:0
+--- validate_v_ptrace ---
+TAP version 13
+1..19
+# Starting 19 tests from 17 test cases.
+#  RUN           global.ptrace_v_not_enabled ...
+#            OK  global.ptrace_v_not_enabled
+ok 1 global.ptrace_v_not_enabled
+#  RUN           global.ptrace_v_early_debug ...
+#            OK  global.ptrace_v_early_debug
+ok 2 global.ptrace_v_early_debug
+#  RUN           global.ptrace_v_syscall_clobbering ...
+#            OK  global.ptrace_v_syscall_clobbering
+ok 3 global.ptrace_v_syscall_clobbering
+#  RUN           v_csr_invalid.new_vlenb.ptrace_v_invalid_values ...
+#            OK  v_csr_invalid.new_vlenb.ptrace_v_invalid_values
+ok 4 v_csr_invalid.new_vlenb.ptrace_v_invalid_values
+#  RUN           v_csr_invalid.vcsr_invalid_reserved_bits.ptrace_v_invalid_values ...
+#            OK  v_csr_invalid.vcsr_invalid_reserved_bits.ptrace_v_invalid_values
+ok 5 v_csr_invalid.vcsr_invalid_reserved_bits.ptrace_v_invalid_values
+#  RUN           v_csr_invalid.vtype_invalid_reserved_bits.ptrace_v_invalid_values ...
+#            OK  v_csr_invalid.vtype_invalid_reserved_bits.ptrace_v_invalid_values
+ok 6 v_csr_invalid.vtype_invalid_reserved_bits.ptrace_v_invalid_values
+#  RUN           v_csr_invalid.invalid_vill_bit.ptrace_v_invalid_values ...
+#            OK  v_csr_invalid.invalid_vill_bit.ptrace_v_invalid_values
+ok 7 v_csr_invalid.invalid_vill_bit.ptrace_v_invalid_values
+#  RUN           v_csr_invalid.reserved_vsew.ptrace_v_invalid_values ...
+#            OK  v_csr_invalid.reserved_vsew.ptrace_v_invalid_values
+ok 8 v_csr_invalid.reserved_vsew.ptrace_v_invalid_values
+#  RUN           v_csr_invalid.reserved_vediv.ptrace_v_invalid_values ...
+#      SKIP      Test not supported for Vector
+#            OK  v_csr_invalid.reserved_vediv.ptrace_v_invalid_values
+ok 9 v_csr_invalid.reserved_vediv.ptrace_v_invalid_values # SKIP Test not supported for Vector
+#  RUN           v_csr_invalid.reserved_vlmul.ptrace_v_invalid_values ...
+#            OK  v_csr_invalid.reserved_vlmul.ptrace_v_invalid_values
+ok 10 v_csr_invalid.reserved_vlmul.ptrace_v_invalid_values
+#  RUN           v_csr_invalid.frac_lmul1.ptrace_v_invalid_values ...
+#            OK  v_csr_invalid.frac_lmul1.ptrace_v_invalid_values
+ok 11 v_csr_invalid.frac_lmul1.ptrace_v_invalid_values
+#  RUN           v_csr_invalid.int_lmul1.ptrace_v_invalid_values ...
+#      SKIP      This test does not support VLEN > 16
+
+#            OK  v_csr_invalid.int_lmul1.ptrace_v_invalid_values
+ok 12 v_csr_invalid.int_lmul1.ptrace_v_invalid_values # SKIP This test does not support VLEN > 16
+
+#  RUN           v_csr_invalid.int_lmul2.ptrace_v_invalid_values ...
+#      SKIP      Test not supported for Vector
+#            OK  v_csr_invalid.int_lmul2.ptrace_v_invalid_values
+ok 13 v_csr_invalid.int_lmul2.ptrace_v_invalid_values # SKIP Test not supported for Vector
+#  RUN           v_csr_invalid.vl1.ptrace_v_invalid_values ...
+#      SKIP      This test does not support VLEN > 128
+
+#            OK  v_csr_invalid.vl1.ptrace_v_invalid_values
+ok 14 v_csr_invalid.vl1.ptrace_v_invalid_values # SKIP This test does not support VLEN > 128
+
+#  RUN           v_csr_invalid.vl2.ptrace_v_invalid_values ...
+#      SKIP      Test not supported for Vector
+#            OK  v_csr_invalid.vl2.ptrace_v_invalid_values
+ok 15 v_csr_invalid.vl2.ptrace_v_invalid_values # SKIP Test not supported for Vector
+#  RUN           v_csr_valid.frac_lmul1.ptrace_v_valid_values ...
+#            OK  v_csr_valid.frac_lmul1.ptrace_v_valid_values
+ok 16 v_csr_valid.frac_lmul1.ptrace_v_valid_values
+#  RUN           v_csr_valid.int_lmul1.ptrace_v_valid_values ...
+#            OK  v_csr_valid.int_lmul1.ptrace_v_valid_values
+ok 17 v_csr_valid.int_lmul1.ptrace_v_valid_values
+#  RUN           v_csr_valid.int_lmul2.ptrace_v_valid_values ...
+#      SKIP      Test not supported for Vector
+#            OK  v_csr_valid.int_lmul2.ptrace_v_valid_values
+ok 18 v_csr_valid.int_lmul2.ptrace_v_valid_values # SKIP Test not supported for Vector
+#  RUN           v_csr_valid.int_lmul3.ptrace_v_valid_values ...
+#            OK  v_csr_valid.int_lmul3.ptrace_v_valid_values
+ok 19 v_csr_valid.int_lmul3.ptrace_v_valid_values
+# PASSED: 19 / 19 tests passed.
+# 6 skipped test(s) detected. Consider enabling relevant config options to improve coverage.
+# Totals: pass:13 fail:0 xfail:0 xpass:0 skip:6 error:0
+=== kernel severe messages ===
+FINAL_SELFTESTS_PASS

@@ -1,0 +1,12 @@
+diff --git a/tools/testing/selftests/kvm/Makefile.kvm b/tools/testing/selftests/kvm/Makefile.kvm
+--- a/tools/testing/selftests/kvm/Makefile.kvm
++++ b/tools/testing/selftests/kvm/Makefile.kvm
+@@ -228,6 +228,8 @@ TEST_GEN_PROGS_s390 += pre_fault_memory_test
+ TEST_GEN_PROGS_riscv = $(TEST_GEN_PROGS_COMMON)
+ TEST_GEN_PROGS_riscv += riscv/sbi_pmu_test
+ TEST_GEN_PROGS_riscv += riscv/ebreak_test
++TEST_GEN_PROGS_riscv += riscv/vector_owner_lifetime_test
++TEST_GEN_PROGS_riscv += riscv/vector_owner_onereg_test
+ TEST_GEN_PROGS_riscv += access_tracking_perf_test
+ TEST_GEN_PROGS_riscv += arch_timer
+ TEST_GEN_PROGS_riscv += coalesced_io_test

@@ -1,0 +1,163 @@
+diff --git a/arch/riscv/kvm/trace.h b/arch/riscv/kvm/trace.h
+index 23a5fd1b686e..4eeabd1590b0 100644
+--- a/arch/riscv/kvm/trace.h
++++ b/arch/riscv/kvm/trace.h
+@@ -133,6 +133,50 @@ TRACE_EVENT(kvm_vcpu_irq,
+ 		  __entry->vcpu_id, __entry->irq, __entry->level)
+ );
+ 
++TRACE_EVENT(kvm_riscv_vector_restore_request,
++	TP_PROTO(unsigned long vcpu_id, int cpu, unsigned int source,
++		 unsigned long host_vs),
++	TP_ARGS(vcpu_id, cpu, source, host_vs),
++
++	TP_STRUCT__entry(
++		__field(unsigned long, vcpu_id)
++		__field(int, cpu)
++		__field(unsigned int, source)
++		__field(unsigned long, host_vs)
++	),
++
++	TP_fast_assign(
++		__entry->vcpu_id	= vcpu_id;
++		__entry->cpu		= cpu;
++		__entry->source		= source;
++		__entry->host_vs	= host_vs;
++	),
++
++	TP_printk("VCPU: %lu, CPU: %d, source: %s, host VS: 0x%lx",
++		  __entry->vcpu_id, __entry->cpu,
++		  __print_symbolic(__entry->source,
++				   { 0, "load" }, { 1, "kernel_vector" }),
++		  __entry->host_vs)
++);
++
++TRACE_EVENT(kvm_riscv_vector_restore,
++	TP_PROTO(unsigned long vcpu_id, int cpu),
++	TP_ARGS(vcpu_id, cpu),
++
++	TP_STRUCT__entry(
++		__field(unsigned long, vcpu_id)
++		__field(int, cpu)
++	),
++
++	TP_fast_assign(
++		__entry->vcpu_id	= vcpu_id;
++		__entry->cpu		= cpu;
++	),
++
++	TP_printk("VCPU: %lu, CPU: %d",
++		  __entry->vcpu_id, __entry->cpu)
++);
++
+ #endif /* _TRACE_KVM_H */
+ 
+ #undef TRACE_INCLUDE_PATH
+diff --git a/arch/riscv/kvm/vcpu.c b/arch/riscv/kvm/vcpu.c
+index 7f1636c44d41..3a84e5d13578 100644
+--- a/arch/riscv/kvm/vcpu.c
++++ b/arch/riscv/kvm/vcpu.c
+@@ -800,12 +800,13 @@ static __always_inline void kvm_riscv_vcpu_swap_in_host_state(struct kvm_vcpu *v
+  * This must be noinstr as instrumentation may make use of RCU, and this is not
+  * safe during the EQS.
+  */
+-static void noinstr kvm_riscv_vcpu_enter_exit(struct kvm_vcpu *vcpu,
++static bool noinstr kvm_riscv_vcpu_enter_exit(struct kvm_vcpu *vcpu,
+ 					      struct kvm_cpu_trap *trap)
+ {
+ 	void *nsh;
+ 	struct kvm_cpu_context *gcntx = &vcpu->arch.guest_context;
+ 	struct kvm_cpu_context *hcntx = &vcpu->arch.host_context;
++	bool vector_restored = false;
+ 
+ 	/*
+ 	 * We save trap CSRs (such as SEPC, SCAUSE, STVAL, HTVAL, and
+@@ -824,6 +825,7 @@ static void noinstr kvm_riscv_vcpu_enter_exit(struct kvm_vcpu *vcpu,
+ 		current->thread.riscv_v_flags |= RISCV_V_VCPU_CTX;
+ 		__kvm_riscv_vector_restore(gcntx);
+ 		gcntx->sstatus = (gcntx->sstatus & ~SR_VS) | SR_VS_CLEAN;
++		vector_restored = true;
+ 	}
+ 
+ 	if (kvm_riscv_nacl_sync_sret_available()) {
+@@ -886,6 +888,8 @@ static void noinstr kvm_riscv_vcpu_enter_exit(struct kvm_vcpu *vcpu,
+ 	vcpu->arch.last_exit_cpu = vcpu->cpu;
+ 	guest_state_exit_irqoff();
+ 	kvm_riscv_vcpu_swap_in_host_state(vcpu);
++
++	return vector_restored;
+ }
+ 
+ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu)
+@@ -893,6 +897,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu)
+ 	int ret;
+ 	struct kvm_cpu_trap trap;
+ 	struct kvm_run *run = vcpu->run;
++	bool vector_restored;
+ 
+ 	if (!vcpu->arch.ran_atleast_once)
+ 		kvm_riscv_vcpu_config_ran_once(vcpu);
+@@ -1001,7 +1006,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu)
+ 
+ 		guest_timing_enter_irqoff();
+ 
+-		kvm_riscv_vcpu_enter_exit(vcpu, &trap);
++		vector_restored = kvm_riscv_vcpu_enter_exit(vcpu, &trap);
+ 
+ 		vcpu->mode = OUTSIDE_GUEST_MODE;
+ 		vcpu->stat.exits++;
+@@ -1026,6 +1031,9 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu)
+ 
+ 		local_irq_enable();
+ 
++		if (vector_restored)
++			trace_kvm_riscv_vector_restore(vcpu->vcpu_id,
++						       smp_processor_id());
+ 		trace_kvm_exit(&trap);
+ 
+ 		preempt_enable();
+diff --git a/arch/riscv/kvm/vcpu_vector.c b/arch/riscv/kvm/vcpu_vector.c
+index fefc2857f753..5f52032a9ca0 100644
+--- a/arch/riscv/kvm/vcpu_vector.c
++++ b/arch/riscv/kvm/vcpu_vector.c
+@@ -17,6 +17,8 @@
+ #include <asm/kvm_vcpu_vector.h>
+ #include <asm/vector.h>
+ 
++#include "trace.h"
++
+ #ifdef CONFIG_RISCV_ISA_V
+ void kvm_riscv_vcpu_vector_reset(struct kvm_vcpu *vcpu)
+ {
+@@ -56,8 +58,15 @@ void kvm_riscv_vcpu_guest_vector_restore(struct kvm_cpu_context *cntx,
+ 					 unsigned long *isa)
+ {
+ 	if ((cntx->sstatus & SR_VS) != SR_VS_OFF) {
+-		if (riscv_isa_extension_available(isa, V))
++		if (riscv_isa_extension_available(isa, V)) {
++			struct kvm_vcpu *vcpu = container_of(cntx, struct kvm_vcpu,
++							  arch.guest_context);
++			unsigned long host_vs = task_pt_regs(current)->status & SR_VS;
++
+ 			riscv_v_flags_set(riscv_v_flags() | RISCV_V_VCPU_NEED_RESTORE);
++			trace_kvm_riscv_vector_restore_request(vcpu->vcpu_id,
++							       smp_processor_id(), 0, host_vs);
++		}
+ 	}
+ }
+ 
+@@ -110,8 +119,13 @@ void kvm_riscv_vcpu_flush_vector(void)
+ 
+ 	kvm_riscv_vcpu_guest_vector_save(&vcpu->arch.guest_context, vcpu->arch.isa);
+ 
+-	if ((vcpu->arch.guest_context.sstatus & SR_VS) != SR_VS_OFF)
++	if ((vcpu->arch.guest_context.sstatus & SR_VS) != SR_VS_OFF) {
++		unsigned long host_vs = task_pt_regs(current)->status & SR_VS;
++
+ 		riscv_v_flags_set(riscv_v_flags() | RISCV_V_VCPU_NEED_RESTORE);
++		trace_kvm_riscv_vector_restore_request(vcpu->vcpu_id,
++						       smp_processor_id(), 1, host_vs);
++	}
+ }
+ 
+ #endif

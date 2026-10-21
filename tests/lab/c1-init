@@ -1,0 +1,14 @@
+#!/bin/sh
+export PATH=/bin
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+uname -a
+if insmod /kvm.ko && test -c /dev/kvm; then
+    echo C1_BOOT_PASS
+    ls -l /dev/kvm
+else
+    echo C1_BOOT_FAIL
+fi
+dmesg | grep -i kvm
+poweroff -f

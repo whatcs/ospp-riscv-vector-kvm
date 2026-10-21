@@ -1,0 +1,262 @@
+diff --git a/arch/riscv/include/asm/kvm_host.h b/arch/riscv/include/asm/kvm_host.h
+index a306005..1554b0a 100644
+--- a/arch/riscv/include/asm/kvm_host.h
++++ b/arch/riscv/include/asm/kvm_host.h
+@@ -202,6 +202,10 @@ struct kvm_vcpu_arch {
+ 	/* CPU context of Guest VCPU */
+ 	struct kvm_cpu_context guest_context;
+ 
++	/* Identity and version used by Vector owner shadow tracking. */
++	u64 vector_owner_cookie;
++	u64 vector_state_generation;
++
+ 	/* CPU CSR context of Guest VCPU */
+ 	struct kvm_vcpu_csr guest_csr;
+ 
+diff --git a/arch/riscv/include/asm/kvm_vcpu_vector.h b/arch/riscv/include/asm/kvm_vcpu_vector.h
+index ebc619e..cfa963f 100644
+--- a/arch/riscv/include/asm/kvm_vcpu_vector.h
++++ b/arch/riscv/include/asm/kvm_vcpu_vector.h
+@@ -37,6 +37,8 @@ int kvm_riscv_vcpu_alloc_vector_context(struct kvm_vcpu *vcpu);
+ void kvm_riscv_vcpu_free_vector_context(struct kvm_vcpu *vcpu);
+ void kvm_riscv_register_vctx_callback(void (*func)(void));
+ void kvm_riscv_unregister_vctx_callback(void);
++void kvm_riscv_vcpu_vector_shadow_load(struct kvm_vcpu *vcpu, int cpu);
++void kvm_riscv_vcpu_vector_shadow_put(struct kvm_vcpu *vcpu);
+ void kvm_riscv_vcpu_flush_vector(void);
+ 
+ static inline void kvm_riscv_v_init(void)
+@@ -90,6 +92,15 @@ static inline void kvm_riscv_vcpu_free_vector_context(struct kvm_vcpu *vcpu)
+ {
+ }
+ 
++static inline void kvm_riscv_vcpu_vector_shadow_load(struct kvm_vcpu *vcpu,
++						     int cpu)
++{
++}
++
++static inline void kvm_riscv_vcpu_vector_shadow_put(struct kvm_vcpu *vcpu)
++{
++}
++
+ static inline void kvm_riscv_v_init(void)
+ {
+ }
+diff --git a/arch/riscv/kvm/trace.h b/arch/riscv/kvm/trace.h
+index 4eeabd1..e66c48b 100644
+--- a/arch/riscv/kvm/trace.h
++++ b/arch/riscv/kvm/trace.h
+@@ -177,6 +177,50 @@ TRACE_EVENT(kvm_riscv_vector_restore,
+ 		  __entry->vcpu_id, __entry->cpu)
+ );
+ 
++TRACE_EVENT(kvm_riscv_vector_shadow,
++	TP_PROTO(unsigned long vcpu_id, int cpu, unsigned int action,
++		 bool eligible, unsigned int reason, unsigned long host_vs,
++		 unsigned long guest_vs, u64 generation),
++	TP_ARGS(vcpu_id, cpu, action, eligible, reason, host_vs, guest_vs,
++		generation),
++
++	TP_STRUCT__entry(
++		__field(unsigned long, vcpu_id)
++		__field(int, cpu)
++		__field(unsigned int, action)
++		__field(bool, eligible)
++		__field(unsigned int, reason)
++		__field(unsigned long, host_vs)
++		__field(unsigned long, guest_vs)
++		__field(u64, generation)
++	),
++
++	TP_fast_assign(
++		__entry->vcpu_id	= vcpu_id;
++		__entry->cpu		= cpu;
++		__entry->action		= action;
++		__entry->eligible	= eligible;
++		__entry->reason		= reason;
++		__entry->host_vs	= host_vs;
++		__entry->guest_vs	= guest_vs;
++		__entry->generation	= generation;
++	),
++
++	TP_printk("VCPU: %lu, CPU: %d, action: %s, eligible: %d, reason: %s, host VS: 0x%lx, guest VS: 0x%lx, generation: %llu",
++		  __entry->vcpu_id, __entry->cpu,
++		  __print_symbolic(__entry->action,
++				   { 0, "load" }, { 1, "put" }),
++		  __entry->eligible,
++		  __print_symbolic(__entry->reason,
++				   { 0, "hit" }, { 1, "empty" },
++				   { 2, "other_vcpu" }, { 3, "cookie" },
++				   { 4, "generation" }, { 5, "guest_off" },
++				   { 6, "host_on" }, { 7, "migration" },
++				   { 8, "put_candidate" }),
++		  __entry->host_vs, __entry->guest_vs,
++		  __entry->generation)
++);
++
+ #endif /* _TRACE_KVM_H */
+ 
+ #undef TRACE_INCLUDE_PATH
+diff --git a/arch/riscv/kvm/vcpu.c b/arch/riscv/kvm/vcpu.c
+index 3a84e5d..4b0831d 100644
+--- a/arch/riscv/kvm/vcpu.c
++++ b/arch/riscv/kvm/vcpu.c
+@@ -647,6 +647,7 @@ csr_restore_done:
+ 	kvm_riscv_vcpu_guest_fp_restore(&vcpu->arch.guest_context,
+ 					vcpu->arch.isa);
+ 	get_cpu_vector_context();
++	kvm_riscv_vcpu_vector_shadow_load(vcpu, cpu);
+ 	kvm_riscv_vcpu_host_vector_save(&vcpu->arch.host_context);
+ 	kvm_riscv_vcpu_guest_vector_restore(&vcpu->arch.guest_context,
+ 					    vcpu->arch.isa);
+@@ -674,6 +675,7 @@ void kvm_arch_vcpu_put(struct kvm_vcpu *vcpu)
+ 	get_cpu_vector_context();
+ 	kvm_riscv_vcpu_guest_vector_save(&vcpu->arch.guest_context,
+ 					 vcpu->arch.isa);
++	kvm_riscv_vcpu_vector_shadow_put(vcpu);
+ 	kvm_riscv_vcpu_host_vector_restore(&vcpu->arch.host_context);
+ 	put_cpu_vector_context();
+ 
+diff --git a/arch/riscv/kvm/vcpu_vector.c b/arch/riscv/kvm/vcpu_vector.c
+index 5f52032..4bbeb48 100644
+--- a/arch/riscv/kvm/vcpu_vector.c
++++ b/arch/riscv/kvm/vcpu_vector.c
+@@ -7,6 +7,7 @@
+  *     Greentime Hu <greentime.hu@sifive.com>
+  */
+ 
++#include <linux/atomic.h>
+ #include <linux/errno.h>
+ #include <linux/err.h>
+ #include <linux/kvm_host.h>
+@@ -20,6 +21,28 @@
+ #include "trace.h"
+ 
+ #ifdef CONFIG_RISCV_ISA_V
++enum kvm_riscv_vector_shadow_reason {
++	KVM_RISCV_VECTOR_SHADOW_HIT,
++	KVM_RISCV_VECTOR_SHADOW_EMPTY,
++	KVM_RISCV_VECTOR_SHADOW_OTHER_VCPU,
++	KVM_RISCV_VECTOR_SHADOW_COOKIE,
++	KVM_RISCV_VECTOR_SHADOW_GENERATION,
++	KVM_RISCV_VECTOR_SHADOW_GUEST_OFF,
++	KVM_RISCV_VECTOR_SHADOW_HOST_ON,
++	KVM_RISCV_VECTOR_SHADOW_MIGRATION,
++	KVM_RISCV_VECTOR_SHADOW_PUT_CANDIDATE,
++};
++
++struct kvm_riscv_vector_shadow_owner {
++	struct kvm_vcpu *vcpu;
++	u64 cookie;
++	u64 generation;
++};
++
++static DEFINE_PER_CPU(struct kvm_riscv_vector_shadow_owner,
++			      kvm_riscv_vector_shadow_owner);
++static atomic64_t kvm_riscv_vector_owner_cookie = ATOMIC64_INIT(0);
++
+ void kvm_riscv_vcpu_vector_reset(struct kvm_vcpu *vcpu)
+ {
+ 	unsigned long *isa = vcpu->arch.isa;
+@@ -36,6 +59,8 @@ void kvm_riscv_vcpu_vector_reset(struct kvm_vcpu *vcpu)
+ 	} else {
+ 		cntx->sstatus |= SR_VS_OFF;
+ 	}
++
++	vcpu->arch.vector_state_generation++;
+ }
+ 
+ static void kvm_riscv_vcpu_vector_clean(struct kvm_cpu_context *cntx)
+@@ -84,6 +109,73 @@ void kvm_riscv_vcpu_host_vector_restore(struct kvm_cpu_context *cntx)
+ 	riscv_v_flags_set(riscv_v_flags() & ~(RISCV_V_VCPU_CTX | RISCV_V_VCPU_NEED_RESTORE));
+ }
+ 
++void kvm_riscv_vcpu_vector_shadow_load(struct kvm_vcpu *vcpu, int cpu)
++{
++	struct kvm_riscv_vector_shadow_owner *owner;
++	unsigned long guest_vs = vcpu->arch.guest_context.sstatus & SR_VS;
++	unsigned long host_vs = task_pt_regs(current)->status & SR_VS;
++	enum kvm_riscv_vector_shadow_reason reason;
++	bool eligible = false;
++
++	owner = this_cpu_ptr(&kvm_riscv_vector_shadow_owner);
++	if (guest_vs == SR_VS_OFF) {
++		reason = KVM_RISCV_VECTOR_SHADOW_GUEST_OFF;
++	} else if (host_vs != SR_VS_OFF) {
++		reason = KVM_RISCV_VECTOR_SHADOW_HOST_ON;
++	} else if (!owner->vcpu) {
++		reason = vcpu->arch.last_exit_cpu == cpu ?
++			 KVM_RISCV_VECTOR_SHADOW_EMPTY :
++			 KVM_RISCV_VECTOR_SHADOW_MIGRATION;
++	} else if (owner->vcpu != vcpu) {
++		reason = KVM_RISCV_VECTOR_SHADOW_OTHER_VCPU;
++	} else if (owner->cookie != vcpu->arch.vector_owner_cookie) {
++		reason = KVM_RISCV_VECTOR_SHADOW_COOKIE;
++	} else if (owner->generation != vcpu->arch.vector_state_generation) {
++		reason = KVM_RISCV_VECTOR_SHADOW_GENERATION;
++	} else {
++		reason = KVM_RISCV_VECTOR_SHADOW_HIT;
++		eligible = true;
++	}
++
++	trace_kvm_riscv_vector_shadow(vcpu->vcpu_id, cpu, 0, eligible,
++				      reason, host_vs, guest_vs,
++				      vcpu->arch.vector_state_generation);
++
++	/* A load consumes the hypothetical state; the next put publishes it. */
++	owner->vcpu = NULL;
++	owner->cookie = 0;
++	owner->generation = 0;
++}
++
++void kvm_riscv_vcpu_vector_shadow_put(struct kvm_vcpu *vcpu)
++{
++	struct kvm_riscv_vector_shadow_owner *owner;
++	unsigned long guest_vs = vcpu->arch.guest_context.sstatus & SR_VS;
++	unsigned long host_vs = task_pt_regs(current)->status & SR_VS;
++	enum kvm_riscv_vector_shadow_reason reason;
++	bool eligible;
++
++	owner = this_cpu_ptr(&kvm_riscv_vector_shadow_owner);
++	eligible = guest_vs != SR_VS_OFF && host_vs == SR_VS_OFF;
++	if (eligible) {
++		owner->vcpu = vcpu;
++		owner->cookie = vcpu->arch.vector_owner_cookie;
++		owner->generation = vcpu->arch.vector_state_generation;
++		reason = KVM_RISCV_VECTOR_SHADOW_PUT_CANDIDATE;
++	} else {
++		owner->vcpu = NULL;
++		owner->cookie = 0;
++		owner->generation = 0;
++		reason = guest_vs == SR_VS_OFF ?
++			 KVM_RISCV_VECTOR_SHADOW_GUEST_OFF :
++			 KVM_RISCV_VECTOR_SHADOW_HOST_ON;
++	}
++
++	trace_kvm_riscv_vector_shadow(vcpu->vcpu_id, smp_processor_id(), 1,
++				      eligible, reason, host_vs, guest_vs,
++				      vcpu->arch.vector_state_generation);
++}
++
+ int kvm_riscv_vcpu_alloc_vector_context(struct kvm_vcpu *vcpu)
+ {
+ 	vcpu->arch.guest_context.vector.datap = kzalloc(riscv_v_vsize, GFP_KERNEL_ACCOUNT);
+@@ -97,6 +189,10 @@ int kvm_riscv_vcpu_alloc_vector_context(struct kvm_vcpu *vcpu)
+ 		return -ENOMEM;
+ 	}
+ 
++	vcpu->arch.vector_owner_cookie =
++		atomic64_inc_return(&kvm_riscv_vector_owner_cookie);
++	vcpu->arch.vector_state_generation = 0;
++
+ 	return 0;
+ }
+ 
+@@ -246,5 +342,7 @@ int kvm_riscv_vcpu_set_reg_vector(struct kvm_vcpu *vcpu,
+ 	if (copy_from_user(reg_addr, uaddr, reg_size))
+ 		return -EFAULT;
+ 
++	vcpu->arch.vector_state_generation++;
++
+ 	return 0;
+ }

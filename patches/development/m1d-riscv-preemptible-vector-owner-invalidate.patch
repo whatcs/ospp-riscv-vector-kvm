@@ -1,0 +1,18 @@
+diff --git a/arch/riscv/include/asm/vector.h b/arch/riscv/include/asm/vector.h
+index c05ac7b..cfce755 100644
+--- a/arch/riscv/include/asm/vector.h
++++ b/arch/riscv/include/asm/vector.h
+@@ -405,6 +405,13 @@ static inline void __switch_to_vector(struct task_struct *prev,
+ 	}
+ 
+ 	if (riscv_preempt_v_started(next)) {
++		/*
++		 * A preemptible kernel Vector user can be scheduled back after a
++		 * vCPU published a guest owner on this hart.  Drop that owner before
++		 * the kernel context resumes or restores and overwrites the register
++		 * file.
++		 */
++		riscv_v_owner_invalidate(RISCV_V_INVALIDATE_KERNEL_VECTOR);
+ 		if (next->thread.riscv_v_flags & RISCV_PREEMPT_V_IN_SCHEDULE) {
+ 			next->thread.riscv_v_flags &= ~RISCV_PREEMPT_V_IN_SCHEDULE;
+ 			riscv_v_enable();

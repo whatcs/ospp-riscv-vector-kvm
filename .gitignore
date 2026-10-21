@@ -1,0 +1,30 @@
+# Local and generated files
+*.swp
+*.tmp
+*.bak
+*.orig
+*.rej
+*~
+
+# Build artifacts and VM images
+build/
+out/
+*.o
+*.ko
+*.a
+*.so
+*.img
+*.qcow2
+vmlinux
+Image
+
+# Credentials and local SSH configuration
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+ssh_config
+.env
+
+# Patch-mail staging
+outgoing/

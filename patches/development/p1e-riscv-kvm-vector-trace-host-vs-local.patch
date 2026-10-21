@@ -1,0 +1,33 @@
+diff --git a/arch/riscv/kvm/vcpu_vector.c b/arch/riscv/kvm/vcpu_vector.c
+index b642aed93482..b9e4461e4235 100644
+--- a/arch/riscv/kvm/vcpu_vector.c
++++ b/arch/riscv/kvm/vcpu_vector.c
+@@ -61,11 +61,11 @@ void kvm_riscv_vcpu_guest_vector_restore(struct kvm_cpu_context *cntx,
+ 		if (riscv_isa_extension_available(isa, V)) {
+ 			struct kvm_vcpu *vcpu = container_of(cntx, struct kvm_vcpu,
+ 							  arch.guest_context);
++			unsigned long host_vs = task_pt_regs(current)->status & SR_VS;
+ 
+ 			riscv_v_flags_set(riscv_v_flags() | RISCV_V_VCPU_NEED_RESTORE);
+ 			trace_kvm_riscv_vector_restore_request(vcpu->vcpu_id,
+-							       smp_processor_id(), 0,
+-							       task_pt_regs(current)->status & SR_VS);
++							       smp_processor_id(), 0, host_vs);
+ 		}
+ 	}
+ }
+@@ -119,11 +119,12 @@ void kvm_riscv_vcpu_flush_vector(void)
+ 
+ 	kvm_riscv_vcpu_guest_vector_save(&vcpu->arch.guest_context, vcpu->arch.isa);
+ 
+ 	if ((vcpu->arch.guest_context.sstatus & SR_VS) != SR_VS_OFF) {
++		unsigned long host_vs = task_pt_regs(current)->status & SR_VS;
++
+ 		riscv_v_flags_set(riscv_v_flags() | RISCV_V_VCPU_NEED_RESTORE);
+ 		trace_kvm_riscv_vector_restore_request(vcpu->vcpu_id,
+-						       smp_processor_id(), 1,
+-						       task_pt_regs(current)->status & SR_VS);
++						       smp_processor_id(), 1, host_vs);
+ 	}
+ }
+ 

@@ -1,0 +1,15 @@
+diff --git a/arch/riscv/kvm/vcpu_vector.c b/arch/riscv/kvm/vcpu_vector.c
+index 56c0f7078a9f..b642aed93482 100644
+--- a/arch/riscv/kvm/vcpu_vector.c
++++ b/arch/riscv/kvm/vcpu_vector.c
+@@ -65,8 +65,8 @@ void kvm_riscv_vcpu_guest_vector_restore(struct kvm_cpu_context *cntx,
+ 
+ 			riscv_v_flags_set(riscv_v_flags() | RISCV_V_VCPU_NEED_RESTORE);
+ 			trace_kvm_riscv_vector_restore_request(vcpu->vcpu_id,
+-						       smp_processor_id(), 0,
+-						       task_pt_regs(current)->status & SR_VS);
++							       smp_processor_id(), 0,
++							       task_pt_regs(current)->status & SR_VS);
+ 		}
+ 	}
+ }
