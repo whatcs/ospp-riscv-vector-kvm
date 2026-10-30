@@ -31,10 +31,10 @@ ssh -F /home/riscv/ws/lab/ssh_config ospp-l1
 ssh -F /home/riscv/ws/lab/ssh_config ospp-l2
 ```
 
-从 Windows 可先 `ssh riscv-vm`，也可由 agent 经 SSH 调用上述脚本。
+从 Windows 可先 `ssh riscv-vm`，也可通过自动化脚本经 SSH 调用上述命令。
 L1 的 SSH 只绑定 x86 Ubuntu 内的 `127.0.0.1:7722`。
 L2 的 SSH 只绑定 L1 内的 `127.0.0.1:8822`，通过 ProxyJump 访问。
-实验私钥只在 x86 Ubuntu 的 lab 目录中，不复制到 L1/L2，也不放进本交接包。
+实验私钥只在 x86 Ubuntu 的 lab 目录中，不复制到 L1/L2，也不放进本仓库。
 
 正常关闭时先关 L2，再关 L1，最后才关闭 VMware Ubuntu：
 

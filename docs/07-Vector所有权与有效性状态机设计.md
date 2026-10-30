@@ -16,7 +16,7 @@
 - 硬件已经不再保存 Guest，Guest `owner` **必须清除**；
 - 如果不清，下一次把“旧 owner”当作命中并跳过 restore，Guest 会读到 Host 数据，属于隔离错误。
 
-这也暴露了申请书/dsh 初版执行方案中的核心缺口：如果 F-1 在每次 put 都清 owner，后续 load
+这也暴露了申请书初版执行方案中的核心缺口：如果 F-1 在每次 put 都清 owner，后续 load
 就不可能命中；如果不清，owner 又是假的。要获得跨 put/load 的收益，不能只增加一个
 `struct kvm_vcpu *owner`，还必须安全地延迟 Host restore，并接入 Host task、调度器和
 kernel Vector 对硬件状态的接管路径。
