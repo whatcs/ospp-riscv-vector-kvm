@@ -5,6 +5,18 @@ OSPP project materials for optimizing RISC-V Vector context scheduling in Linux/
 本仓库保存项目的设计文档、开发阶段补丁、测试脚本和精选验证证据。owner 优化 RFC v0
 已经投稿至 Linux RISC-V/KVM 邮件列表并进入评审，尚未合入 Linux 主线。
 
+## Delivery snapshot (2026-11-18)
+
+- owner 优化 RFC v0 已公开发送，当前未发现邮件列表上的公开评审回复；后续不重复发送同一版，
+  只在收到反馈或形成明确修订后准备 v1；
+- RFC v0 的构建与运行验证固定在 Torvalds master `21a7f44fd076`，并不声称已经在今天的
+  最新 master 上重新验证；
+- 单独投稿的 `CONFIG_RISCV_ISA_V=n` 构建修复与上游提交
+  [`2ddd9c19780f`](https://git.kernel.org/torvalds/c/2ddd9c19780f) 等价。上游合入的是
+  Zhanpeng Zhang 的实现，不应表述为本项目补丁被合入；未来 rebase 时直接使用上游版本；
+- 当前交付范围、七项产出索引、验证边界和仓库审计结果见
+  [`docs/27-社区反馈与导师交付状态.md`](docs/27-社区反馈与导师交付状态.md)。
+
 ## Project goal
 
 The prototype tracks per-hart Guest Vector residency and, under conservative safety conditions, avoids
@@ -42,12 +54,13 @@ evidence/performance-proxy/  A/B 与 RFC 冒烟原始证据压缩包及复核说
 
 建议从以下文档开始阅读：
 
-1. `docs/03-RISC-V-Vector与KVM上下文调研报告.md`
-2. `docs/04-RISC-V-Vector调用链与时序图.md`
-3. `docs/13-M1C-默认关闭快路径原型与AB结果.md`
-4. `docs/16-ABI隔离与安全不变量论证.md`
-5. `docs/19-Linux7.3最终验证状态.md`
-6. `docs/26-现有环境性能代理量化.md`
+1. `docs/27-社区反馈与导师交付状态.md`
+2. `docs/03-RISC-V-Vector与KVM上下文调研报告.md`
+3. `docs/04-RISC-V-Vector调用链与时序图.md`
+4. `docs/13-M1C-默认关闭快路径原型与AB结果.md`
+5. `docs/16-ABI隔离与安全不变量论证.md`
+6. `docs/19-Linux7.3最终验证状态.md`
+7. `docs/26-现有环境性能代理量化.md`
 
 ## Upstream status
 

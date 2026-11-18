@@ -32,7 +32,7 @@ tracepoint。本补丁让该函数只返回一个布尔值，等退出静默区�
 | `arch/riscv/kvm/vcpu.c` | 从 noinstr 函数返回是否真正 restore，并在安全位置 trace |
 | `arch/riscv/kvm/vcpu_vector.c` | 在 load 与 kernel Vector 路径记录请求来源和 Host VS |
 
-当前合并补丁：[p1-riscv-kvm-vector-tracing.patch](../p1-riscv-kvm-vector-tracing.patch)，
+当前合并补丁：[p1-riscv-kvm-vector-tracing.patch](../patches/development/p1-riscv-kvm-vector-tracing.patch)，
 SHA-256：`A0195E50741121A9D4AB32CA76266FE5D7900E91F8F509ED95A4918B3DD9EE87`。
 
 ## 3. 构建与静态检查
@@ -89,8 +89,9 @@ SHA-256：`A0195E50741121A9D4AB32CA76266FE5D7900E91F8F509ED95A4918B3DD9EE87`。
 1. 当前嵌套环境中，完整 Guest Vector restore 是高频真实事件；
 2. 同一 vCPU 会在不同 hart 上运行，迁移失效不是只存在于设计表中的边缘情况。
 
-原始 trace：[p1-vector-restore.trace](../evidence/p1/p1-vector-restore.trace)，大小 2,730,259
-字节，SHA-256：`0E5717709D29262230C2157A465CB69B428C4FB506395BF27CF617730ADAE001`。
+原始 trace `p1-vector-restore.trace` 大小 2,730,259 字节，SHA-256：
+`0E5717709D29262230C2157A465CB69B428C4FB506395BF27CF617730ADAE001`。为控制公开仓库体积，
+该探索阶段原始 trace 未纳入仓库；仓库只保存最终精选 trace 和性能代理原始证据包。
 
 ## 6. 这组数据不能证明什么
 
@@ -111,10 +112,12 @@ L2 稳定运行后，分别清空 trace buffer 采集两个独立窗口：
 SSH 往返，且外层是 QEMU TCG，这仍不是性能数据；但来源结论很清楚：这两组中每次实际 restore
 都对应一次 load 请求，没有 kernel Vector 请求合并进来，Host 用户态 VS 也始终为 Off。
 
-- idle trace：[ospp-p1b-idle-20s.trace](../evidence/p1/ospp-p1b-idle-20s.trace)，
-  SHA-256 `616423CF1673299F9EE93A4129BF9F0544FCECD8036609EFF0FAA3AD18F3680B`；
-- RVV trace：[ospp-p1b-rvv-100.trace](../evidence/p1/ospp-p1b-rvv-100.trace)，
-  SHA-256 `027F36A452F64E744A5294156E7BBADF0A9CD0E9EC2A025A8027C80D1781BE01`。
+- idle trace `ospp-p1b-idle-20s.trace`：SHA-256
+  `616423CF1673299F9EE93A4129BF9F0544FCECD8036609EFF0FAA3AD18F3680B`；
+- RVV trace `ospp-p1b-rvv-100.trace`：SHA-256
+  `027F36A452F64E744A5294156E7BBADF0A9CD0E9EC2A025A8027C80D1781BE01`。
+
+以上两份探索阶段 trace 同样未纳入公开仓库；数值和哈希保留用于追溯。
 
 ## 8. 对设计的影响
 
